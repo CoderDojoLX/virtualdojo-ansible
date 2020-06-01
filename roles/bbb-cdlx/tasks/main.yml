@@ -61,10 +61,10 @@
     src: favicon.ico
     dest: /var/www/bigbluebutton-default/favicon.ico
 
-# - name: ensure our own default slides are used
-#   copy:
-#     src: default.pdf
-#     dest: /var/www/bigbluebutton-default/default.pdf
+- name: ensure our own default slides are used
+  copy:
+    src: default.pdf
+    dest: /var/www/bigbluebutton-default/default.pdf
 
 - name: copy our own mute/unmute sounds
   copy:
