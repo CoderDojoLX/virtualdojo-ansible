@@ -1,0 +1,69 @@
+---
+- name: Basic Setup
+  hosts: all
+  become: yes
+  tags:
+    - base
+  vars_files:
+    - vars.yml
+  roles:
+    - base
+
+- name: BigBlueButton
+  hosts: all
+  become: yes
+  tags:
+    - bbb
+  vars_files:
+    - vars.yml
+  vars:
+    bbb_letsencrypt_enable: yes
+    bbb_letsencrypt_email: "{{ letsencrypt_email }}"
+    bbb_coturn_enable: yes
+    bbb_turn_enable: yes
+    bbb_coturn_port_tls: 5349
+    bbb_turn_servers:
+      - server: "{{ bbb_hostname }}"
+        port: "{{ bbb_coturn_port }}"
+        secret: "{{ bbb_coturn_secret }}"
+        tls: false
+      - server: "{{ bbb_hostname }}"
+        port: "{{ bbb_coturn_port_tls }}"
+        secret: "{{ bbb_coturn_secret }}"
+        tls: true
+      - server: "{{ bbb_additional_turn_server }}"
+        port: "{{ bbb_coturn_port }}"
+        secret: "{{ turn_secret }}"
+        tls: false
+      - server: "{{ bbb_additional_turn_server }}"
+        port: 443
+        secret: "{{ turn_secret }}"
+        tls: true
+    bbb_nginx_dh: no
+    bbb_greenlight_enable: no
+    bbb_api_demos_enable: no
+  pre_tasks:
+    - name: find out what the current turn config is
+      slurp:
+        src: /etc/turnserver.conf
+      register: current_turn_conf
+      ignore_errors: yes
+      when: not bbb_coturn_secret is defined
+    - name: register current turn secret
+      set_fact:
+        bbb_coturn_secret: "{{ current_turn_conf.content | b64decode | regex_findall('static-auth-secret=(.+)') | first }}"
+      when: not bbb_coturn_secret is defined and not current_turn_conf.failed
+    - name: Generate turn server secret
+      command: openssl rand -hex 16
+      register: openssl_rand_16_turn
+      check_mode: no
+      when: not bbb_coturn_secret is defined
+    - name: Register turn server secret
+      set_fact:
+        bbb_coturn_secret: "{{ openssl_rand_16_turn.stdout }}"
+      when: not bbb_coturn_secret is defined and openssl_rand_16_turn is defined
+  roles:
+    - nginx
+    - n0emis.bigbluebutton
+    - kwoodson.yedit
+    - bbb-cdlx

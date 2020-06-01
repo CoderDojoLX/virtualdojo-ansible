@@ -1,0 +1,131 @@
+---
+- name: ensure we're using mp4 for recordings
+  yedit:
+    src: /usr/local/bigbluebutton/core/scripts/presentation.yml
+    key: video_formats
+    value:
+      - mp4
+  notify: restart bigbluebutton
+
+- name: ensure default recording is enabled
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: "^disableRecordingDefault"
+    line: "disableRecordingDefault=true"
+  notify: restart bigbluebutton
+
+- name: ensure recording auto start is disabled
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: "^autoStartRecording"
+    line: "autoStartRecording=false"
+  notify: restart bigbluebutton
+
+- name: ensure users are allowed to start recording
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: "^allowStartStopRecording"
+    line: "allowStartStopRecording=false"
+  notify: restart bigbluebutton
+
+- name: customize welcome meeting header
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: "^defaultWelcomeMessage"
+    line: "defaultWelcomeMessage=Bem vindo ao <b>%%CONFNAME%%</b>!<br><br>Se tiveres perguntas sobre como utilizar o BigBlueButton, podes consultar uns videos (breves) <a href="event:http://www.bigbluebutton.org/html5"><u>aqui</u></a>.<br><br>Para juntares-te à chamada com audio, clica o botão com simbolo telefone. Usa por favor fones para minimzar o ruido e barulho para os outros!"
+  notify: restart bigbluebutton
+
+- name: enforce meeting duration limit
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: "^defaultMeetingDuration"
+    line: "defaultMeetingDuration=480"
+  notify: restart bigbluebutton
+
+- name: ensure our own help URL is used
+  yedit:
+    src: /usr/share/meteor/bundle/programs/server/assets/app/config/settings.yml
+    key: public.app.helpLink
+    value: "https://coderdojo-lx.pt"
+  notify: restart bigbluebutton
+
+- name: customize welcome meeting footer
+  lineinfile:
+    path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
+    regexp: "^defaultWelcomeMessageFooter"
+    line: "defaultWelcomeMessageFooter=Vamos programar! Não se esqueçam de se juntarem ao nosso <a href="https://join.slack.com/t/coderdojo-lx/shared_invite/zt-ehkglu7a-P6Xy_UiSQ4CKs48h83bidA" target="_blank"><u>canal Slack aqui!</u></a><br>Recomendamos que façam download da app no telemóvel."
+  notify: restart bigbluebutton
+
+- name: ensure that our favicon is used
+  copy:
+    src: favicon.ico
+    dest: /var/www/bigbluebutton-default/favicon.ico
+
+# - name: ensure our own default slides are used
+#   copy:
+#     src: default.pdf
+#     dest: /var/www/bigbluebutton-default/default.pdf
+
+- name: copy our own mute/unmute sounds
+  copy:
+    src: "{{ item }}"
+    dest: "/opt/freeswitch/share/freeswitch/sounds/en/us/callie/conference/48000/{{item}}"
+  with_items:
+    - conf-muted-ulmlernt.wav
+    - conf-unmuted-ulmlernt.wav
+
+- name: ensure our own mute sound is used
+  xml:
+    path: /opt/freeswitch/etc/freeswitch/autoload_configs/conference.conf.xml
+    xpath: '/configuration/profiles/profile[@name="cdquality"]/param[@name="muted-sound"]'
+    attribute: value
+    value: conference/conf-muted-ulmlernt.wav
+  notify: restart bigbluebutton
+
+- name: ensure our own unmute sound is used
+  xml:
+    path: /opt/freeswitch/etc/freeswitch/autoload_configs/conference.conf.xml
+    xpath: '/configuration/profiles/profile[@name="cdquality"]/param[@name="unmuted-sound"]'
+    attribute: value
+    value: conference/conf-unmuted-ulmlernt.wav
+  notify: restart bigbluebutton
+
+- name: adapt coturn ports in ufw
+  copy:
+    content: |
+      [turnserver]
+      title=Coturn turnserver
+      description=Free open source implementation of TURN and STUN Server
+      ports=3478,3479,5349,5350/tcp|3478,3479,5349,5350,49152:65535/udp
+    mode: 0644
+    dest: /etc/ufw/applications.d/turnserver
+
+- name: allow turnserver in ufw
+  ufw:
+    rule: allow
+    name: turnserver
+    state: enabled
+
+- name: adapt freeswitch ports in ufw
+  copy:
+    content: |
+      [freeswitch]
+      title=freeswitch
+      description=freeswitch telecom stack
+      ports=16384:32768/udp
+    mode: 0644
+    dest: /etc/ufw/applications.d/freeswitch
+
+- name: allow freeswitch in ufw
+  ufw:
+    rule: allow
+    name: freeswitch
+    state: enabled
+
+- name: Ensure coturn is restarted everyday @ 4 am
+  cron:
+    name: "restart coturn"
+    minute: "0"
+    hour: "4"
+    user: root
+    job: "systemctl restart coturn.service"
