@@ -31,14 +31,14 @@
 - name: customize welcome meeting header
   lineinfile:
     path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
-    regexp: "^defaultWelcomeMessage"
-    line: "defaultWelcomeMessage=Bem vindo ao <b>%%CONFNAME%%</b>!<br><br>Se tiveres perguntas sobre como utilizar o BigBlueButton, podes consultar uns videos (breves) <a href=\"event:http://www.bigbluebutton.org/html5\"><u>aqui</u></a>.<br><br>Para juntares-te à chamada com audio, clica o botão com simbolo telefone. Usa por favor fones para minimzar o ruido e barulho para os outros!"
+    regexp: "^defaultWelcomeMessage="
+    line: "defaultWelcomeMessage=Bem vindo ao <b>%%CONFNAME%%</b>!<br><br>Se tiveres perguntas sobre como utilizar o BigBlueButton, podes consultar uns videos (breves) <a href=\"event:http://www.bigbluebutton.org/html5\"><u>aqui</u></a>.<br><br>Para juntares-te \u00e0 chamada com audio, clica o bot\u00e3o com simbolo telefone. Usa por favor fones para minimzar o ruido e barulho para os outros!"
   notify: restart bigbluebutton
 
 - name: enforce meeting duration limit
   lineinfile:
     path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
-    regexp: "^defaultMeetingDuration"
+    regexp: "^defaultMeetingDuration="
     line: "defaultMeetingDuration=480"
   notify: restart bigbluebutton
 
@@ -52,8 +52,8 @@
 - name: customize welcome meeting footer
   lineinfile:
     path: /usr/share/bbb-web/WEB-INF/classes/bigbluebutton.properties
-    regexp: "^defaultWelcomeMessageFooter"
-    line: "defaultWelcomeMessageFooter=Vamos programar! Não se esqueçam de se juntarem ao nosso <a href=\"https://join.slack.com/t/coderdojo-lx/shared_invite/zt-ehkglu7a-P6Xy_UiSQ4CKs48h83bidA\" target=\"_blank\"><u>canal Slack aqui!</u></a><br>Recomendamos que façam download da app no telemóvel."
+    regexp: "^defaultWelcomeMessageFooter="
+    line: "defaultWelcomeMessageFooter=Vamos programar! N\u00e3o se esque\u00e7am de se juntarem ao nosso <a href=\"https://join.slack.com/t/coderdojo-lx/shared_invite/zt-ehkglu7a-P6Xy_UiSQ4CKs48h83bidA\" target=\"_blank\"><u>canal Slack aqui!</u></a><br>Recomendamos que fa\u00e7am download da app no telem\u00f3vel."
   notify: restart bigbluebutton
 
 - name: ensure that our favicon is used
